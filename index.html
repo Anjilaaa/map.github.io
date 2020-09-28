@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>MAP</title>
+  <meta name="description"
+    content="Gaupalika, Nagarpalika, Mahanagarpalika, Upamahanagarpalika, Nepal District, Nepal Provinces, GeoJSON, GIS Data, TopoJSON, Leaflet Nepal, Local level, GIS Data, Nepal GIS Data">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin="" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="site-header">
+    <h1>Map</h1>
+  </div>
+  <div id="map"></div>
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"
+    integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+    crossorigin=""></script>
+  <script type="text/javascript" src="./data/nepal.province.js"></script>
+  <script type="text/javascript" src="./data/NewNepalDistrict.js"></script>
+
+  <script>
+    var map = L.map('map').setView([28.1999999, 84.100140], 7);
+
+    var layerGroup = new L.layerGroup();
+    layerGroup.addTo(map);
+
+    provinceLevel = L.geoJson(provinceData, {
+      style: function (feature) {
+        return {
+          fillColor: '#ffffff',
+          fillOpacity: 1,
+          color: '#555',
+          weight: 1,
+          opacity: 0.5
+        }
+      },
+      onEachFeature: handleLayer
+    });
+
+    layerGroup.addLayer(provinceLevel);
+
+    districtLevel = L.geoJson(null, {
+      style: function (feature) {
+        return feature.properties && feature.properties.style;
+      },
+      onEachFeature: handleLayer
+    })
+    layerGroup.addLayer(districtLevel)
+
+    locallevel = L.geoJson(null, {
+      style: function (feature) {
+        return feature.properties && feature.properties.style;
+      },
+      onEachFeature: handleLayer,
+    })
+    layerGroup.addLayer(locallevel);
+
+    let dataFilledMun = ['Dalome', 'Chum Nubri'];
+    var popup = L.popup();
+    let mappingData;
+
+    function onMapClick(e, munInfo, layer) {
+      var bounds = layer.getBounds();
+      map.fitBounds(bounds);
+      let filteredDistrict = districtData.features.filter(item => {
+        return item.properties.STATE_CODE === munInfo.STATE_CODE;
+      });
+
+      if (munInfo.DISTRICT) {
+        getMunData(munInfo.DISTRICT);
+      }
+      else {
+        if (mappingData) {
+          layerGroup.removeLayer(districtLevel)
+        }
+        mappingData = { type: "FeatureCollection", features: filteredDistrict, Province: munInfo.STATE_CODE };
+        addLevelLayer(mappingData);
+      }
+
+
+      if (checkMunWithData(munInfo)) {
+        popup
+          .setLatLng(e.latlng)
+          .setContent('Municipality Name : ' + munInfo.GaPa_NaPa + '<br>' +
+            'Municipality Level : ' + munInfo.Type_GN + '<br>' +
+            'District : ' + munInfo.DISTRICT + '<br>' + '<button>Click me</button>')
+          .openOn(map);
+      }
+    }
+
+
+    function checkMunWithData(munInfo) {
+      if (dataFilledMun.includes(munInfo.GaPa_NaPa)) {
+        return true;
+      }
+      return false;
+    }
+
+    function handleLayer(feature, layer, changeStyle = true, level = 'province') {
+      if (changeStyle) {
+        layer.setStyle({
+          // fillColor: checkMunWithData(feature.properties) ? '#02a9e6' : '#ffffff',
+          // fillColor: '#ffffff',
+          fillColor: getProvinceColor(feature.properties.Province),
+          fillOpacity: 1,
+          color: '#555',
+          weight: 1,
+          opacity: 0.5,
+        });
+
+      }
+
+      layer.on('click', function (e) {
+        onMapClick(e, feature.properties, layer);
+      })
+      layer
+        .bindTooltip(`${level === 'province' ? layer.feature.properties.Province : level === 'district ' ? layer.feature.properties.DISTRICT : layer.feature.properties.GaPa_NaPa}`, {
+          permanent: true,
+          direction: "center",
+          // className: changeStyle ? "ttarunp" : "ttarund"
+        })
+        .openTooltip();
+
+    }
+
+    function enterLayer() {
+      this.bringToFront();
+      this.setStyle({
+        weight: 2,
+        opacity: 1
+      });
+    }
+
+    function leaveLayer() {
+      this.bringToBack();
+      this.setStyle({
+        weight: 1,
+        opacity: .5
+      });
+    }
+
+    // $('.leaflet-control-layers-selector').attr('type', 'checkbox');
+
+    map.on('zoomend', function (e) {
+      // if (map.getZoom() > 7) {
+      //   // layerGroup.unbindTooltip();
+      //   layerGroup.removeLayer(provinceLevel).unbindTooltip()
+      //   getJson();
+      // }
+      // if (map.getZoom() <= 7) {
+      //   layerGroup.removeLayer(locallevel)
+      //   provinceLevel = L.geoJson(provinceData, {
+      //     style: function (feature) {
+      //       return {
+      //         fillColor: '#ffffff',
+      //         fillOpacity: 1,
+      //         color: '#555',
+      //         weight: 1,
+      //         opacity: 0.5
+      //       }
+      //     },
+      //     onEachFeature: tooltipAdder
+
+      //   }).addTo(map);
+
+      // }
+    });
+    function getJson() {
+      $.getJSON("https://gist.githubusercontent.com/anjesh/a8bc737fed30cbf99680d87821ca5de7/raw/1bb1872f7886f2a4a4882a798d24fa8c70d46541/Nepal-new-map.geojson", function (data) {
+        var items = [];
+        $.each(data, function (key, val) {
+          // locallevel.addData(data);
+          layerGroup.addLayer(L.geoJson(data, {
+            style: {
+              fillColor: '#ffffff',
+              fillOpacity: 1,
+              color: '#555',
+              weight: 1,
+              opacity: 0.5
+            },
+            onEachFeature: handleLayer,
+          }));
+        })
+      })
+
+    }
+
+    //  $.getJSON("https://gist.githubusercontent.com/anjesh/a8bc737fed30cbf99680d87821ca5de7/raw/1bb1872f7886f2a4a4882a798d24fa8c70d46541/Nepal-new-map.geojson", function (data) {
+    //     var items = [];
+    //     $.each(data, function (key, val) {
+    //         locallevel.addData(data);
+    //     })
+    // })
+
+    function tooltipAdder(feature, layer) {
+      layer
+        .bindTooltip(`${layer.feature.properties.Province}`, {
+          permanent: true,
+          direction: "center"
+        })
+        .openTooltip();
+
+
+    }
+
+    function addLevelLayer(data) {
+      layerGroup.removeLayer(locallevel)
+      districtLevel = L.geoJson(data, {
+        style: function (feature) {
+          return {
+            fillColor: getProvinceColor(data.Province),
+            fillOpacity: 1,
+            color: '#555',
+            weight: 1,
+            opacity: 0.5
+          }
+        },
+        onEachFeature: (feature, layer) => handleLayer(feature, layer, false, 'district')
+      })
+      layerGroup.addLayer(districtLevel);
+
+
+    }
+
+    function getMunData(selectedDistrict) {
+      $.getJSON("https://gist.githubusercontent.com/anjesh/a8bc737fed30cbf99680d87821ca5de7/raw/1bb1872f7886f2a4a4882a798d24fa8c70d46541/Nepal-new-map.geojson", function (data) {
+        var items = [];
+        var munMappingData;
+        let filteredMun;
+        $.each(data, function (key, val) {
+          filteredMun = data.features.filter((item) => item.properties.DISTRICT === selectedDistrict);
+        })
+        munMappingData = { type: "FeatureCollection", features: filteredMun }
+        locallevel = (L.geoJson(munMappingData, {
+          style: {
+            fillColor: '#ffffff',
+            fillOpacity: 1,
+            color: '#555',
+            weight: 1,
+            opacity: 0.5
+          },
+          onEachFeature: (feature, layer) => handleLayer(feature, layer, true, 'municipality'),
+        }));
+        layerGroup.addLayer(locallevel);
+      })
+
+    }
+
+    function getProvinceColor(province) {
+      switch (province) {
+        case 1:
+          return 'red';
+          break;
+        case 2:
+          return 'green';
+          break;
+        case 3:
+          return 'blue';
+          break;
+        case 4:
+          return 'lightblue';
+          break;
+        case 5:
+          return 'lightgreen';
+          break;
+        case 6:
+          return 'yellow';
+          break;
+        case 7:
+          return 'orange';
+          break;
+        default:
+          return 'skyblue';
+          break;
+      }
+    }
+
+  </script>
+
+</body>
+
+</html>
