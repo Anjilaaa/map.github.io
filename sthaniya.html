@@ -70,9 +70,7 @@
     var popup = L.popup();
     let mappingData;
 
-    function onMapClick(e, munInfo, layer) {
-      var bounds = layer.getBounds();
-      map.fitBounds(bounds);
+    function onMapClick(e, munInfo) {
       let filteredDistrict = districtData.features.filter(item => {
         return item.properties.STATE_CODE === munInfo.STATE_CODE;
       });
@@ -85,8 +83,8 @@
         layerGroup.removeLayer(districtLevel)
       }
       mappingData = { type: "FeatureCollection", features: filteredDistrict, Province: munInfo.STATE_CODE };
-      addLevelLayer(mappingData);
 
+      addLevelLayer(mappingData);
 
 
       if (checkMunWithData(munInfo)) {
@@ -107,7 +105,7 @@
       return false;
     }
 
-    function handleLayer(feature, layer, changeStyle = true, level = 'province') {
+    function handleLayer(feature, layer, changeStyle = true) {
       if (changeStyle) {
         layer.setStyle({
           // fillColor: checkMunWithData(feature.properties) ? '#02a9e6' : '#ffffff',
@@ -121,16 +119,13 @@
 
       }
 
+
       layer.on('click', function (e) {
-        onMapClick(e, feature.properties, layer);
+        onMapClick(e, feature.properties)
       })
-      layer
-        .bindTooltip(`${level === 'province' ? layer.feature.properties.Province : level === 'district ' ? layer.feature.properties.DISTRICT : layer.feature.properties.GaPa_NaPa}`, {
-          permanent: true,
-          direction: "center",
-          // className: changeStyle ? "ttarunp" : "ttarund"
-        })
-        .openTooltip();
+
+
+
 
     }
 
@@ -226,7 +221,7 @@
             opacity: 0.5
           }
         },
-        onEachFeature: (feature, layer) => handleLayer(feature, layer, false, 'district')
+        onEachFeature: (feature, layer) => handleLayer(feature, layer, false)
       })
       layerGroup.addLayer(districtLevel);
 
@@ -250,7 +245,7 @@
             weight: 1,
             opacity: 0.5
           },
-          onEachFeature: (feature, layer) => handleLayer(feature, layer, true, 'municipality'),
+          onEachFeature: (feature, layer) => handleLayer(feature, layer, true),
         }));
         layerGroup.addLayer(locallevel);
       })
