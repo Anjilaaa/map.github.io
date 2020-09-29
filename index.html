@@ -30,7 +30,10 @@
   <script type="text/javascript" src="./data/NewNepalDistrict.js"></script>
 
   <script>
-    var map = L.map('map').setView([28.1999999, 84.100140], 7);
+    var map = L.map('map', {
+      minZoom: 7,
+      maxZoom: 12
+    }).setView([28.1999999, 84.100140], 7);
 
     var layerGroup = new L.layerGroup();
     layerGroup.addTo(map);
@@ -124,13 +127,31 @@
       layer.on('click', function (e) {
         onMapClick(e, feature.properties, layer);
       })
-      layer
-        .bindTooltip(`${level === 'province' ? layer.feature.properties.Province : level === 'district ' ? layer.feature.properties.DISTRICT : layer.feature.properties.GaPa_NaPa}`, {
-          permanent: true,
-          direction: "center",
-          // className: changeStyle ? "ttarunp" : "ttarund"
-        })
-        .openTooltip();
+
+      if (map.getZoom() >= 7) {
+        switch (level) {
+          case 'province':
+            break;
+          case 'district':
+            map.eachLayer((layer) => layer.unbindTooltip());
+            break;
+          case 'municipality':
+            map.eachLayer((layer) => layer.unbindTooltip());
+            break;
+        }
+        tooltipAdder(`${level === 'province' ? layer.feature.properties.Province : level === 'district ' ? layer.feature.properties.DISTRICT : layer.feature.properties.GaPa_NaPa}`, layer)
+
+      };
+
+
+
+      // layer
+      //   .bindTooltip(`${level === 'province' ? layer.feature.properties.Province : level === 'district ' ? layer.feature.properties.DISTRICT : layer.feature.properties.GaPa_NaPa}`, {
+      //     permanent: true,
+      //     direction: "center",
+      //     // className: changeStyle ? "ttarunp" : "ttarund"
+      //   })
+      //   .openTooltip();
 
     }
 
@@ -153,28 +174,14 @@
     // $('.leaflet-control-layers-selector').attr('type', 'checkbox');
 
     map.on('zoomend', function (e) {
-      // if (map.getZoom() > 7) {
-      //   // layerGroup.unbindTooltip();
-      //   layerGroup.removeLayer(provinceLevel).unbindTooltip()
-      //   getJson();
-      // }
-      // if (map.getZoom() <= 7) {
-      //   layerGroup.removeLayer(locallevel)
-      //   provinceLevel = L.geoJson(provinceData, {
-      //     style: function (feature) {
-      //       return {
-      //         fillColor: '#ffffff',
-      //         fillOpacity: 1,
-      //         color: '#555',
-      //         weight: 1,
-      //         opacity: 0.5
-      //       }
-      //     },
-      //     onEachFeature: tooltipAdder
-
-      //   }).addTo(map);
-
-      // }
+      var zoomValue = map.getZoom();
+      if (zoomValue <= 7) {
+        provinceLevel.eachLayer((layer) => tooltipAdder(`${layer.feature.properties.Province}`, layer))
+        locallevel.eachLayer((layer) => layer.unbindTooltip());
+        districtLevel.eachLayer((layer) => layer.unbindTooltip());
+        map.removeLayer(districtLevel);
+        map.removeLayer(locallevel);
+      }
     });
     function getJson() {
       $.getJSON("https://gist.githubusercontent.com/anjesh/a8bc737fed30cbf99680d87821ca5de7/raw/1bb1872f7886f2a4a4882a798d24fa8c70d46541/Nepal-new-map.geojson", function (data) {
@@ -203,15 +210,13 @@
     //     })
     // })
 
-    function tooltipAdder(feature, layer) {
+    function tooltipAdder(showData, layer) {
       layer
-        .bindTooltip(`${layer.feature.properties.Province}`, {
+        .bindTooltip(`${showData}`, {
           permanent: true,
           direction: "center"
         })
         .openTooltip();
-
-
     }
 
     function addLevelLayer(data) {
@@ -254,6 +259,10 @@
         }));
         layerGroup.addLayer(locallevel);
       })
+
+    }
+
+    function toolTipRemover(layer) {
 
     }
 
