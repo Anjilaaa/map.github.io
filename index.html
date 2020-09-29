@@ -32,7 +32,8 @@
   <script>
     var map = L.map('map', {
       minZoom: 7,
-      maxZoom: 12
+      maxZoom: 12,
+      scrollWheelZoom: false
     }).setView([28.1999999, 84.100140], 7);
 
     var layerGroup = new L.layerGroup();
@@ -143,16 +144,6 @@
 
       };
 
-
-
-      // layer
-      //   .bindTooltip(`${level === 'province' ? layer.feature.properties.Province : level === 'district ' ? layer.feature.properties.DISTRICT : layer.feature.properties.GaPa_NaPa}`, {
-      //     permanent: true,
-      //     direction: "center",
-      //     // className: changeStyle ? "ttarunp" : "ttarund"
-      //   })
-      //   .openTooltip();
-
     }
 
     function enterLayer() {
@@ -182,6 +173,28 @@
         map.removeLayer(districtLevel);
         map.removeLayer(locallevel);
       }
+      if (zoomValue >= 8) {
+        provinceLevel.eachLayer((layer) => layer.unbindTooltip());
+        districtLevel.eachLayer((layer) => {
+          if (!layer.getTooltip()) {
+            districtLevel.eachLayer((layer) => layer.unbindTooltip());
+          }
+        });
+      }
+      if (zoomValue === 9) {
+        if (map.hasLayer(locallevel)) {
+          locallevel.eachLayer((layer) => {
+            layer.unbindTooltip()
+          });
+          map.removeLayer(locallevel);
+
+        }
+        districtLevel.eachLayer((layer) => {
+          if (!layer.getTooltip()) {
+            districtLevel.eachLayer((layer) => tooltipAdder(`${layer.feature.properties.DISTRICT}`, layer))
+          }
+        });
+      }
     });
     function getJson() {
       $.getJSON("https://gist.githubusercontent.com/anjesh/a8bc737fed30cbf99680d87821ca5de7/raw/1bb1872f7886f2a4a4882a798d24fa8c70d46541/Nepal-new-map.geojson", function (data) {
@@ -202,13 +215,6 @@
       })
 
     }
-
-    //  $.getJSON("https://gist.githubusercontent.com/anjesh/a8bc737fed30cbf99680d87821ca5de7/raw/1bb1872f7886f2a4a4882a798d24fa8c70d46541/Nepal-new-map.geojson", function (data) {
-    //     var items = [];
-    //     $.each(data, function (key, val) {
-    //         locallevel.addData(data);
-    //     })
-    // })
 
     function tooltipAdder(showData, layer) {
       layer
@@ -259,10 +265,6 @@
         }));
         layerGroup.addLayer(locallevel);
       })
-
-    }
-
-    function toolTipRemover(layer) {
 
     }
 
