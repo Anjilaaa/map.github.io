@@ -261,7 +261,8 @@
           color = '#161617';
           break;
         case 'municipality':
-          color = '#373B40';
+        color = checkMunWithData(layer.feature.properties).showPopUp ? 'grey' :'#373B40'
+          // color = '#373B40';
           break;
       }
       layer

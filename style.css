@@ -4,3 +4,20 @@ body {
 html, body, #map {
   height: 100%;
 }
+
+.ttarund{
+  font-size: 15px;
+  padding: 0px;
+  background: none;
+  border: none;
+  color: black;
+  box-shadow: none;
+}
+.ttarungn{
+  font-size: 11px;
+  padding: 0px;
+  background: none;
+  border: none;
+  color: black;
+  box-shadow: none;
+}
